@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 char currentDir[256];
 
@@ -45,12 +47,8 @@ void cd() {
    strcat(newDir, "\\");
    strcat(newDir, dir);
    if (chdir(newDir) < 0) {
-      printf("Error - changing the directory\n");
+      printf("Error - Mudar diretorio\n");
    }
-}
-
-void redirectOut() {
-   printf("redirecionar saida\n");
 }
 
 void pwd() {
@@ -62,7 +60,29 @@ void clear() {
    system("cls");
 }
 
+void redirectIn() {
+   char dir[256] = "";
+   scanf("%s", dir);
+   int input_fds = open(dir, O_RDONLY); // ex: "./input.txt"
+   if(dup2(input_fds, STDIN_FILENO) < 0) {
+      printf("Unable to duplicate file descriptor.");
+   }
+}
+
+void redirectOut() {
+   char dir[256] = "";
+   scanf("%s", dir);
+   int input_fds = open(dir, O_WRONLY);
+   if(dup2(input_fds, STDOUT_FILENO) < 0) {
+      printf("Unable to duplicate file descriptor.");
+   }
+}
+
 void resolveCommand(char* command) {
+   if(!strcmp(command, "..")) {
+      cd();
+      return;
+   }
    if(!strcmp(command, "cd")) {
       cd();
       return;
@@ -83,6 +103,10 @@ void resolveCommand(char* command) {
       clear();
       return;
    }
+   if(!strcmp(command, "<")) {
+      redirectIn();
+      return;
+   }
    if(!strcmp(command, ">")) {
       redirectOut();
       return;
@@ -92,7 +116,6 @@ void resolveCommand(char* command) {
 int main() {
    char command[256];
    char param[256];
-
    while(1) {
       updateCurrentDir();
       printf("%s $", currentDir);
