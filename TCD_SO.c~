@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <time.h>
 
 char currentDir[256];
 
@@ -62,11 +63,11 @@ void doFile(char *basePath, void (*funcFileName)(), void (*funcPath)())
             strcpy(path, basePath);
             strcat(path, "/");
             strcat(path, dp->d_name);
-            if (funcFileName) {
-               (*funcFileName)(dp->d_name);
-            }
             if (funcPath) {
                (*funcPath)(path);
+            }
+            if (funcFileName) {
+               (*funcFileName)(dp->d_name);
             }
         }
     }
@@ -92,12 +93,14 @@ void doFileRecursively(char *basePath, void (*funcFileName)(), void (*funcPath)(
 
          doFileRecursively(path, &*funcFileName, &*funcPath);
 
-         if (funcFileName) {
-            (*funcFileName)(dp->d_name);
-         }
          if (funcPath) {
             (*funcPath)(path);
          }
+
+         if (funcFileName) {
+            (*funcFileName)(dp->d_name);
+         }
+
       }
    }
 
@@ -119,6 +122,13 @@ void printFileInfo(char* filename) {
         fprintf(stderr,"File error\n");
         exit(1);
     }
+
+    if( S_ISREG(fs.st_mode) )
+        printf("-");
+    else if (S_ISLNK(fs.st_mode))
+        printf("l");
+    else
+        printf("d");
 
     if( fs.st_mode & S_IRUSR )
         printf("r");
@@ -159,7 +169,6 @@ void printFileInfo(char* filename) {
     else
         printf("- ");
 
-    printf("%s\n", filename);
 }
 
 void ls() {
@@ -180,7 +189,7 @@ void listDir(char str[256]) {
     if(!strcmp(str, "-l")) {
         char dir[256] = "";
         scanf("%s", dir);
-        doFile(dir, &printFileInfo, NULL);
+        doFile(dir, &printFile, &printFileInfo);
     } else
         doFile(str, &printFile, NULL);
 }
@@ -190,7 +199,7 @@ void listDirRS(char str[256]) {
     scanf("%s", dir);
 
     if(!strcmp(str, "-lR")) {
-        doFileRecursively(dir, &printFileInfo, NULL);
+        doFileRecursively(dir, &printFile, &printFileInfo);
     } else if(!strcmp(str, "-R")) {
         doFileRecursively(dir, &printFile, NULL);
     }
@@ -288,7 +297,7 @@ void clear() {
 void redirectIn() {
    char dir[256] = "";
    scanf("%s", dir);
-   int input_fds = open(dir, O_RDONLY); // ex: "./input.txt"
+   int input_fds = open(dir, O_RDONLY);
    if(dup2(input_fds, STDIN_FILENO) < 0) {
       printf("Unable to duplicate file descriptor.");
    }

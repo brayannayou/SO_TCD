@@ -38,12 +38,32 @@ void redirectOut();
 int main() {
    char command[256];
    char param[256];
+   int canal1[2];
+   pid_t pid;
+   int status = 0;
+
    while(1) {
-      updateCurrentDir();
-      printf("%s $", currentDir);
-      scanf("%s", command);
-      resolveCommand(command);
+
+    if(pipe(canal1) == -1) {
+        printf("Erro ao tentar executar: pipe()");
+        return -1;
+    }
+
+    pid = fork();
+
+    if(pid == 0) {
+        updateCurrentDir();
+        printf("%s $", currentDir);
+        scanf("%s", command);
+
+        resolveCommand(command);
+        exit(status);
+    }
+
+
+    pid = wait(&status);
    }
+
    return 0;
 }
 
