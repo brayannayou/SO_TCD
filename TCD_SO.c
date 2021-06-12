@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <errno.h>
 
 char currentDir[256];
 
@@ -106,24 +107,63 @@ void printFile(char* name) {
    printf("%s\n", name, NULL);
 }
 
+void printFileInfo(char* filepath) {
+
+    int returnval = 0;
+    returnval = access (filepath, R_OK);
+
+    if (returnval == 0)
+        printf ("r");
+    else if (errno == EACCES)
+        printf ("-");
+
+    returnval = 0;
+    returnval = access (filepath, W_OK);
+    if (returnval == 0)
+        printf ("w");
+    else if (errno == EACCES)
+        printf ("-");
+
+    returnval = 0;
+    returnval = access (filepath, X_OK);
+    if (returnval == 0)
+        printf ("x ");
+    else if (errno == EACCES)
+        printf ("- ");
+}
+
 void ls() {
     char str[256] = "";
     scanf("%s", str);
 
     if(!strcmp(str, "-R"))
-        listDirRS();
+        listDirRS(str);
+    else if(!strcmp(str, "-l"))
+        listDir(str);
+    else if(!strcmp(str, "-lR"))
+        listDirRS(str);
     else
         listDir(str);
 }
 
-void listDir(char dir[256]) {
-   doFile(dir, &printFile, NULL);
+void listDir(char str[256]) {
+    if(!strcmp(str, "-l")) {
+        char dir[256] = "";
+        scanf("%s", dir);
+        doFile(dir, &printFile, &printFileInfo);
+    } else
+        doFile(str, &printFile, NULL);
 }
 
-void listDirRS() {
-   char dir[256] = "";
-   scanf("%s", dir);
-   doFileRecursively(dir, &printFile, NULL);
+void listDirRS(char str[256]) {
+    char dir[256] = "";
+    scanf("%s", dir);
+
+    if(!strcmp(str, "-lR")) {
+        doFileRecursively(dir, &printFile, &printFileInfo);
+    } else if(!strcmp(str, "-R")) {
+        doFileRecursively(dir, &printFile, NULL);
+    }
 }
 
 void removeFileAndDir(const char *fpath) {
@@ -283,11 +323,6 @@ void resolveCommand(char* command) {
 
    if(!strcmp(command, "ls")) {
       ls();
-      return;
-   }
-
-   if(!strcmp(command, "lsr")) {
-      listDirRS();
       return;
    }
 
