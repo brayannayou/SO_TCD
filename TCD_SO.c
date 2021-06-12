@@ -106,9 +106,17 @@ void printFile(char* name) {
    printf("%s\n", name, NULL);
 }
 
-void listDir() {
-   char dir[256] = "";
-   scanf("%s", dir);
+void ls() {
+    char str[256] = "";
+    scanf("%s", str);
+
+    if(!strcmp(str, "-R"))
+        listDirRS();
+    else
+        listDir(str);
+}
+
+void listDir(char dir[256]) {
    doFile(dir, &printFile, NULL);
 }
 
@@ -192,7 +200,7 @@ void cd() {
    char dir[256] = "", newDir[256] = "";
    scanf("%s", dir);
    strcat(newDir, currentDir);
-   strcat(newDir, "\\");
+   strcat(newDir, "\/");
    strcat(newDir, dir);
    if (chdir(newDir) < 0) {
       printf("Error - Mudar diretorio\n");
@@ -226,6 +234,8 @@ void redirectOut() {
 }
 
 void resolveCommand(char* command) {
+
+
    if(!strcmp(command, "..")) {
       cd();
       return;
@@ -272,7 +282,7 @@ void resolveCommand(char* command) {
    }
 
    if(!strcmp(command, "ls")) {
-      listDir();
+      ls();
       return;
    }
 
