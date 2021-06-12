@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 char currentDir[256];
 
@@ -107,29 +108,58 @@ void printFile(char* name) {
    printf("%s\n", name, NULL);
 }
 
-void printFileInfo(char* filepath) {
+void printFileInfo(char* filename) {
 
-    int returnval = 0;
-    returnval = access (filepath, R_OK);
+    struct stat fs;
+    int r;
 
-    if (returnval == 0)
-        printf ("r");
-    else if (errno == EACCES)
-        printf ("-");
+    r = stat(filename,&fs);
+    if( r==-1 )
+    {
+        fprintf(stderr,"File error\n");
+        exit(1);
+    }
 
-    returnval = 0;
-    returnval = access (filepath, W_OK);
-    if (returnval == 0)
-        printf ("w");
-    else if (errno == EACCES)
-        printf ("-");
+    if( fs.st_mode & S_IRUSR )
+        printf("r");
+    else
+        printf("-");
+    if( fs.st_mode & S_IWUSR )
+        printf("w");
+    else
+        printf("-");
+    if( fs.st_mode & S_IXUSR )
+        printf("x");
+    else
+        printf("-");
 
-    returnval = 0;
-    returnval = access (filepath, X_OK);
-    if (returnval == 0)
-        printf ("x ");
-    else if (errno == EACCES)
-        printf ("- ");
+    if( fs.st_mode & S_IRGRP )
+        printf("r");
+    else
+        printf("-");
+    if( fs.st_mode & S_IWGRP )
+        printf("w");
+    else
+        printf("-");
+    if( fs.st_mode & S_IXGRP )
+        printf("x");
+    else
+        printf("-");
+
+    if( fs.st_mode & S_IROTH )
+        printf("r");
+    else
+        printf("-");
+    if( fs.st_mode & S_IWOTH )
+        printf("w");
+    else
+        printf("-");
+    if( fs.st_mode & S_IXOTH )
+        printf("x ");
+    else
+        printf("- ");
+
+    printf("%s\n", filename);
 }
 
 void ls() {
@@ -150,7 +180,7 @@ void listDir(char str[256]) {
     if(!strcmp(str, "-l")) {
         char dir[256] = "";
         scanf("%s", dir);
-        doFile(dir, &printFile, &printFileInfo);
+        doFile(dir, &printFileInfo, NULL);
     } else
         doFile(str, &printFile, NULL);
 }
@@ -160,7 +190,7 @@ void listDirRS(char str[256]) {
     scanf("%s", dir);
 
     if(!strcmp(str, "-lR")) {
-        doFileRecursively(dir, &printFile, &printFileInfo);
+        doFileRecursively(dir, &printFileInfo, NULL);
     } else if(!strcmp(str, "-R")) {
         doFileRecursively(dir, &printFile, NULL);
     }

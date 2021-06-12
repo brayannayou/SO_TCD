@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <errno.h>
+#include <sys/stat.h>
 
 char currentDir[256];
 
@@ -106,24 +108,92 @@ void printFile(char* name) {
    printf("%s\n", name, NULL);
 }
 
+void printFileInfo(char* filename) {
+
+    struct stat fs;
+    int r;
+
+    r = stat(filename,&fs);
+    if( r==-1 )
+    {
+        fprintf(stderr,"File error\n");
+        exit(1);
+    }
+
+    if( fs.st_mode & S_IRUSR )
+        printf("r");
+    else
+        printf("-");
+    if( fs.st_mode & S_IWUSR )
+        printf("w");
+    else
+        printf("-");
+    if( fs.st_mode & S_IXUSR )
+        printf("x");
+    else
+        printf("-");
+
+    if( fs.st_mode & S_IRGRP )
+        printf("r");
+    else
+        printf("-");
+    if( fs.st_mode & S_IWGRP )
+        printf("w");
+    else
+        printf("-");
+    if( fs.st_mode & S_IXGRP )
+        printf("x");
+    else
+        printf("-");
+
+    if( fs.st_mode & S_IROTH )
+        printf("r");
+    else
+        printf("-");
+    if( fs.st_mode & S_IWOTH )
+        printf("w");
+    else
+        printf("-");
+    if( fs.st_mode & S_IXOTH )
+        printf("x ");
+    else
+        printf("- ");
+
+    printf("%s\n", filename);
+}
+
 void ls() {
     char str[256] = "";
     scanf("%s", str);
 
     if(!strcmp(str, "-R"))
-        listDirRS();
+        listDirRS(str);
+    else if(!strcmp(str, "-l"))
+        listDir(str);
+    else if(!strcmp(str, "-lR"))
+        listDirRS(str);
     else
         listDir(str);
 }
 
-void listDir(char dir[256]) {
-   doFile(dir, &printFile, NULL);
+void listDir(char str[256]) {
+    if(!strcmp(str, "-l")) {
+        char dir[256] = "";
+        scanf("%s", dir);
+        doFile(dir, &printFileInfo, NULL);
+    } else
+        doFile(str, &printFile, NULL);
 }
 
-void listDirRS() {
-   char dir[256] = "";
-   scanf("%s", dir);
-   doFileRecursively(dir, &printFile, NULL);
+void listDirRS(char str[256]) {
+    char dir[256] = "";
+    scanf("%s", dir);
+
+    if(!strcmp(str, "-lR")) {
+        doFileRecursively(dir, &printFileInfo, NULL);
+    } else if(!strcmp(str, "-R")) {
+        doFileRecursively(dir, &printFile, NULL);
+    }
 }
 
 void removeFileAndDir(const char *fpath) {
@@ -283,11 +353,6 @@ void resolveCommand(char* command) {
 
    if(!strcmp(command, "ls")) {
       ls();
-      return;
-   }
-
-   if(!strcmp(command, "lsr")) {
-      listDirRS();
       return;
    }
 
